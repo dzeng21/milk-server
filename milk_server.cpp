@@ -17,7 +17,7 @@
 
 const int BUFFER_SIZE = 1024;
 const std::string milk_storage_file = "milk_storage.txt";
-const std::string SALT = "milk";
+const std::string SALT = "milksalt11111111";
 
 std::unordered_map<std::string, int> milk_storage;
 int global_milk;
