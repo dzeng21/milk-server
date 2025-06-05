@@ -7,7 +7,7 @@ all: milk_server milk_client
 
 # Build milk_server
 milk_server: milk_server.cpp milk_server.h
-	$(CXX) $(CXXFLAGS) -o milk_server milk_server.cpp
+	$(CXX) $(CXXFLAGS) -o milk_server milk_server.cpp -lssl -lcrypto
 
 # Build milk_client
 milk_client: milk_client.cpp

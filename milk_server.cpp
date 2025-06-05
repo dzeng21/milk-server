@@ -11,6 +11,8 @@
 #include <map>
 #include <atomic>
 #include <csignal>
+#include <openssl/sha.h>
+#include <iomanip>
 #include "milk_server.h"
 
 const int BUFFER_SIZE = 1024;
@@ -106,9 +108,26 @@ void produce_milk() {
     }
 }
 
+bool hash_user(const std::string& user, std::string& hashed) {
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256(reinterpret_cast<const unsigned char*>(user.c_str()), user.size(), hash);
+    
+    std::stringstream oss;
+    for (int i = 0; i < 16; i++) {
+        oss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    }
+
+    hashed = oss.str();
+
+    return 1;
+}
+
 bool user_exists(std::string& user) {
+     std::string hash;
+    hash_user(user, hash);
     std::unique_lock<std::mutex> milk_lk(milk_storage_mutex);
-    return milk_storage.count(user);
+
+    return milk_storage.count(hash);
 }
 
 int user_get_global_milk() {
@@ -122,13 +141,16 @@ int user_get_global_milk() {
 }
 
 int user_register(std::string& user) {
+    std::string hash;
+    hash_user(user, hash);
+    
     std::unique_lock<std::mutex> milk_lk(milk_storage_mutex);
     std::stringstream oss;
     int registered;
 
-    if (!milk_storage.count(user)) {
-        milk_storage[user] = 0;
-        oss << "[register] user " << user << "\n";
+    if (!milk_storage.count(hash)) {
+        milk_storage[hash] = 0;
+        oss << "[register] user " << hash << "\n";
         registered = 1;
     }
     else {
@@ -143,18 +165,21 @@ int user_register(std::string& user) {
 }
 
 int user_add_milk(std::string& user, int milk) {
+    std::string hash;
+    hash_user(user, hash);
+
     std::unique_lock<std::mutex> milk_lk(milk_storage_mutex);
     std::stringstream oss;
 
-    if (!milk_storage.count(user)) {
+    if (!milk_storage.count(hash)) {
         throw std::runtime_error("user does not exist\n");
         return -1;
     }
 
-    milk_storage[user] += milk;
+    milk_storage[hash] += milk;
     global_milk -= milk;
 
-    oss << "[add] " << milk << " milk to user " << user << "\n";
+    oss << "[add] " << milk << " milk to user " << hash << "\n";
     std::cout << oss.str();
     write_milk_storage_unsafe();
 
@@ -162,18 +187,21 @@ int user_add_milk(std::string& user, int milk) {
 }
 
 int user_set_milk(std::string& user, int milk) {
+    std::string hash;
+    hash_user(user, hash);
+
     std::unique_lock<std::mutex> milk_lk(milk_storage_mutex);
     std::stringstream oss;
 
-    if (!milk_storage.count(user)) {
+    if (!milk_storage.count(hash)) {
         throw std::runtime_error("user does not exist\n");
         return -1;
     }
 
-    int previous_value = milk_storage[user];
+    int previous_value = milk_storage[hash];
     int new_value = milk;
 
-    milk_storage[user] = new_value;
+    milk_storage[hash] = new_value;
     global_milk -= (new_value - previous_value);
 
     oss << "[set] milk of user " << user << " to " << milk << "\n";
@@ -184,13 +212,16 @@ int user_set_milk(std::string& user, int milk) {
 }
 
 int user_get_milk(std::string& user) {
+    std::string hash;
+    hash_user(user, hash);
+
     std::unique_lock<std::mutex> milk_lk(milk_storage_mutex);
     std::stringstream oss;
 
-    if (milk_storage.count(user)) {
-        oss << "[get] milk of user " << user << " (" << milk_storage[user] << ")" << "\n";
+    if (milk_storage.count(hash)) {
+        oss << "[get] milk of user " << user << " (" << milk_storage[hash] << ")" << "\n";
         std::cout << oss.str();
-        return milk_storage[user];
+        return milk_storage[hash];
     }
     else {
         throw std::runtime_error("user does not exist\n");
@@ -268,8 +299,8 @@ int read_buffer(const char (&buffer)[], std::string& response) {
         }
         else {
             try {
-                user_get_milk(tokens[1]);
-                oss << "user " << tokens[1] << " has " << milk_storage[tokens[1]] << " milk\n";
+                int milk = user_get_milk(tokens[1]);
+                oss << "user " << tokens[1] << " has " << milk << " milk\n";
             }
             catch (std::runtime_error &e) {
                 oss << "[client error] " << e.what();
@@ -405,6 +436,7 @@ int main() {
     std::cout << "close server\n";
 
     close(serverSocket);
+    milk_storage.clear();
     
     return 0;
 }

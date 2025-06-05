@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <iostream>
 #include <cstring>
+#include <openssl/sha.h>
+#include <iomanip>
 
 using namespace std;
 
