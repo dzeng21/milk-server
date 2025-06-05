@@ -20,7 +20,6 @@ const std::string milk_storage_file = "milk_storage.txt";
 const std::string SALT = "11111111";
 
 std::unordered_map<std::string, int> milk_storage;
-std::unordered_map<
 int global_milk;
 
 ThreadPool pool;
