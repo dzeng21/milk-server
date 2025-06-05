@@ -20,6 +20,7 @@ const std::string milk_storage_file = "milk_storage.txt";
 const std::string SALT = "11111111";
 
 std::unordered_map<std::string, int> milk_storage;
+std::unordered_map<
 int global_milk;
 
 ThreadPool pool;
@@ -76,8 +77,18 @@ int read_milk_storage_unsafe() {
 
     while (getline(file, line)) {
         std::stringstream iss(line);
-        iss >> temp >> user >> temp >> milk;
-        milk_storage[user] = milk;
+        iss >> temp;
+        if (temp == "user:") {
+            iss >> user >> temp >> milk;
+            milk_storage[user] = milk;
+        } 
+        else if (temp == "matrix:" )
+        {
+
+        }
+        else {
+            continue;
+        }
     }
 
     file.close();

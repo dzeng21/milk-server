@@ -76,6 +76,23 @@ private:
     bool stopped_ = false;
 };
 
+class Matrix {
+public:
+    Matrix(int rows_, int cols_) : rows(rows_), cols(cols_) {
+        matrix.resize(rows * cols);
+    }
+    int get(int i, int j) {
+        return matrix[i * cols + j];
+    }
+    void set(int i, int j, int value) {
+        matrix[i * cols + j] = value;
+    }
+private:
+    std::vector<int> matrix;
+    int rows;
+    int cols;
+};
+
 // Global variables
 extern std::unordered_map<std::string, int> milk_storage;
 extern ThreadPool pool;
