@@ -17,6 +17,7 @@
 
 const int BUFFER_SIZE = 1024;
 const std::string milk_storage_file = "milk_storage.txt";
+const std::string SALT = "milk";
 
 std::unordered_map<std::string, int> milk_storage;
 int global_milk;
@@ -110,7 +111,8 @@ void produce_milk() {
 
 bool hash_user(const std::string& user, std::string& hashed) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256(reinterpret_cast<const unsigned char*>(user.c_str()), user.size(), hash);
+    const std::string salted = user + SALT;
+    SHA256(reinterpret_cast<const unsigned char*>(salted.c_str()), salted.size(), hash);
     
     std::stringstream oss;
     for (int i = 0; i < 16; i++) {
