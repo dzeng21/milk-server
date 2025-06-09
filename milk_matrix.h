@@ -1,33 +1,96 @@
-
 #include <vector>
+#include <string>
+#include <sstream>
 #include "milk_server.h"
 
 #pragma once
 
 class Matrix {
 public:
-    Matrix(int rows_, int cols_) : rows(rows_), cols(cols_) {
-        matrix.resize(rows * cols);
+    Matrix() : rows(0), cols(0) {
+        matrix.resize(64);
     }
 
-    int get(int i, int j) {
-        return matrix[i * cols + j];
-    }
-
-    void set(int i, int j, int value) {
-        matrix[i * cols + j] = value;
-    }
-
+    void construct(const std::string &s);
     void multiply(Matrix &A, Matrix &B, Matrix &C, ThreadPool &t);
 private:
-    std::vector<int> matrix;
+    std::vector<double> matrix;
     int rows;
     int cols;
 
+    double get(int i, int j) const { return matrix[i * cols + j]; }
+    void set(int i, int j, int value) { matrix[i * cols + j] = value; }
+    void add(int i, int j, int value) { matrix[i * cols + j] += value; }
     void multiply_part(Matrix &A, Matrix &B, Matrix &C, size_t start, size_t end);
 };
 
+void Matrix::construct(const std::string &s) {
+    if (this->rows || this->cols) {
+        this->matrix.clear();
+    }
+
+    std::invalid_argument arg_error = std::invalid_argument("matrix format [1 2 3; 4 5 6; 7 8 9]...");
+
+    if (s.empty() || s.front() != '[' || s.back() != ']') {
+        throw arg_error;
+    }
+
+    std::string input = s.substr(1, s.size() - 2);
+
+    std::stringstream iss(input);
+
+    std::string row;
+
+    //split matrix into rows by ;
+    while (std::getline(iss, row, ';')) {
+        std::vector<double> row_data;
+        std::stringstream rowstream(row);
+        std::string val;
+        
+        //split matrix rows into values
+        while (rowstream >> val) {
+            try {
+                row_data.push_back(std::stod(val));
+            }
+            catch (const std::invalid_argument &e) {
+                throw arg_error;
+            }
+        }
+
+        if (row_data.empty()) {
+            continue;
+        }
+
+        //check of input rows are same size
+        if (this->cols == 0) {
+            this->cols = row_data.size();
+        }
+        else {
+            if (row_data.size() != this->cols) {
+                throw arg_error;
+            }
+        }
+
+        this->matrix.insert(matrix.end(), row_data.begin(), row_data.end());
+
+        this->rows++;
+    }
+}
+
 void Matrix::multiply(Matrix &A, Matrix &B, Matrix &C, ThreadPool &t) {
+    C = Matrix();
+    C.rows = A.rows;
+    C.cols = B.cols;
+    C.matrix.assign(C.rows * C.cols, 0.0);
+
+    if (!A.rows || !A.cols) {
+        throw std::invalid_argument("A is uninitialized");
+    }
+
+    if (!B.rows || !B.cols) {
+        throw std::invalid_argument("B is uninitialized");
+    }
+
     int part_size = A.rows / 8;
 
     for (int thread = 0; thread < 8; ++thread) {
@@ -45,5 +108,5 @@ void Matrix::multiply_part(Matrix &A, Matrix &B, Matrix &C, size_t start, size_t
     for (size_t i = start; i < end; ++i)
         for (size_t j = 0; j < p; ++j)
             for (size_t k = 0; k < n; ++k)
-                C.set(i, j, (A.get(i, k) * B.get(k, j)));
+                C.add(i, j, (A.get(i, k) * B.get(k, j)));
 }
