@@ -315,14 +315,16 @@ Matrix& user_multiply_matrix(std::string& identifier_A, std::string& identifier_
 
     Matrix* A = &matrix_storage[identifier_A];
     Matrix* B = &matrix_storage[identifier_B];
+    Matrix* A_temp = nullptr;
+    Matrix* B_temp = nullptr;
 
     if (identifier_A == identifier_C) {
-        Matrix* A_temp = new Matrix();
+        A_temp = new Matrix();
         *A_temp = *A;
         A = A_temp;
     }
     if (identifier_B == identifier_C) {
-        Matrix* B_temp = new Matrix();
+        B_temp = new Matrix();
         *B_temp = *B;
         B = B_temp;
     }
@@ -336,6 +338,10 @@ Matrix& user_multiply_matrix(std::string& identifier_A, std::string& identifier_
     try {
         matrix_storage[identifier_C].multiply(*A, *B, matrix_storage[identifier_C], pool);
         write_milk_storage_unsafe();
+
+        delete A_temp;
+        delete B_temp;
+
         return matrix_storage[identifier_C];
     }
     catch (std::invalid_argument &e) {
@@ -344,6 +350,9 @@ Matrix& user_multiply_matrix(std::string& identifier_A, std::string& identifier_
             matrix_storage.erase(identifier_C);
         }
         throw std::invalid_argument(oss.str());
+
+        delete A_temp;
+        delete B_temp;
     }
 }
 
