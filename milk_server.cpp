@@ -343,9 +343,8 @@ Matrix& user_multiply_matrix(std::string& identifier_A, std::string& identifier_
         if (!C_exists) {
             matrix_storage.erase(identifier_C);
         }
+        throw std::invalid_argument(oss.str());
     }
-
-    return matrix_storage[identifier_A];
 }
 
 int read_buffer(const char (&buffer)[], std::string& response) {
