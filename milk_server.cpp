@@ -305,6 +305,49 @@ Matrix& user_get_matrix(std::string& identifier) {
     }
 }
 
+Matrix& user_multiply_matrix(std::string& identifier_A, std::string& identifier_B, std::string& identifier_C) {
+    std::unique_lock<std::mutex> milk_lk(milk_storage_mutex);
+    std::stringstream oss;
+
+    if (!matrix_storage.count(identifier_A) || !matrix_storage.count(identifier_B)) {
+        throw std::runtime_error("operand does not exist\n");
+    }
+
+    Matrix* A = &matrix_storage[identifier_A];
+    Matrix* B = &matrix_storage[identifier_B];
+
+    if (identifier_A == identifier_C) {
+        Matrix* A_temp = new Matrix();
+        *A_temp = *A;
+        A = A_temp;
+    }
+    if (identifier_B == identifier_C) {
+        Matrix* B_temp = new Matrix();
+        *B_temp = *B;
+        B = B_temp;
+    }
+
+    bool C_exists = false;
+
+    if (matrix_storage.count(identifier_C)) {
+        C_exists = true;
+    }
+
+    try {
+        matrix_storage[identifier_C].multiply(*A, *B, matrix_storage[identifier_C], pool);
+        write_milk_storage_unsafe();
+        return matrix_storage[identifier_C];
+    }
+    catch (std::invalid_argument &e) {
+        oss << "[matrix multiplication error] " << e.what() << "\n";
+        if (!C_exists) {
+            matrix_storage.erase(identifier_C);
+        }
+    }
+
+    return matrix_storage[identifier_A];
+}
+
 int read_buffer(const char (&buffer)[], std::string& response) {
     int status = 0;
     std::stringstream oss;
@@ -406,13 +449,26 @@ int read_buffer(const char (&buffer)[], std::string& response) {
             oss << "usage: matrix [matrix] [[data]]\n";
         } 
     }
+    else if (tokens[0] == "multiply") {
+        if (tokens.size() != 4) {
+            oss << "usage: multiply [matrix] [matrix] [matrix]\n";
+        }
+        try {
+            Matrix& m = user_multiply_matrix(tokens[1], tokens[2], tokens[3]);
+            oss << "Matrix " << tokens[3] << " = \n";
+            oss << m << "\n";
+        }
+        catch (std::runtime_error &e) {
+            oss << "[client error] " << e.what() << "\n";
+        }
+    }
     else if (tokens[0] == "exit") {
         oss << "goodbye\n";
         status = 1;
     }
     else {
         oss << "unknown com\n";
-        oss << "coms: register, add, set, get\n";
+        oss << "coms: register, add, set, get, matrix, multiply\n";
     }
 
     std::cout << "<<<< sent: " << oss.str() << "\n";

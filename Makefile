@@ -6,7 +6,7 @@ CXXFLAGS = -g -Wall -std=c++23  # -g for debug symbols, -Wall for all warnings
 all: milk_server milk_client matrix_test
 
 # Build milk_server
-milk_server: milk_server.cpp milk_server.h
+milk_server: milk_server.cpp milk_server.h milk_matrix.h
 	$(CXX) $(CXXFLAGS) -o milk_server milk_server.cpp -lssl -lcrypto
 
 # Build milk_client

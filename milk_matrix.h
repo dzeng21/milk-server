@@ -84,6 +84,7 @@ void Matrix::construct(const std::string &s) {
 void Matrix::multiply(Matrix &A, Matrix &B, Matrix &C, ThreadPool &t) {
     if (&A == &C || &B == &C) {
         throw std::invalid_argument("C cannot be A or B");
+        return;
     }
 
     C = Matrix();
@@ -93,11 +94,19 @@ void Matrix::multiply(Matrix &A, Matrix &B, Matrix &C, ThreadPool &t) {
 
     if (!A.rows || !A.cols) {
         throw std::invalid_argument("A is uninitialized");
+        return;
     }
 
     if (!B.rows || !B.cols) {
         throw std::invalid_argument("B is uninitialized");
+        return;
     }
+
+    if (A.cols != B.rows) {
+        throw std::invalid_argument("matrix dimension mismatch");
+        return;
+    }
+
 
     size_t part_size = A.rows / t.thread_count();
 
