@@ -141,7 +141,7 @@ std::ostream& operator<<(std::ostream& os, const Matrix& m) {
     for (size_t i = 0; i < m.rows; i++) {
         os << "        ";
         for (size_t j = 0; j < m.cols; j++) {
-            os << std::setw(16) << std::setprecision(8);
+            os << std::setw(20) << std::fixed << std::setprecision(4);
             os << m.get(i, j);
         }
         os << "\n";
