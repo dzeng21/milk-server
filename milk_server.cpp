@@ -477,7 +477,7 @@ int read_buffer(const char (&buffer)[], std::string& response) {
     }
     else {
         oss << "unknown com\n";
-        oss << "coms: register, add, set, get, matrix, multiply\n";
+        oss << "coms: milk, register, add, set, get, matrix, multiply\n";
     }
 
     std::cout << "<<<< sent: " << oss.str() << "\n";
