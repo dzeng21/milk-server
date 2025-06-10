@@ -349,10 +349,11 @@ Matrix& user_multiply_matrix(std::string& identifier_A, std::string& identifier_
         if (!C_exists) {
             matrix_storage.erase(identifier_C);
         }
-        throw std::invalid_argument(oss.str());
 
         delete A_temp;
         delete B_temp;
+        
+        throw std::invalid_argument(oss.str());
     }
 }
 
