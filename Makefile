@@ -1,6 +1,6 @@
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -g -Wall -std=c++23  # -g for debug symbols, -Wall for all warnings
+CXXFLAGS = -fsanitize=address -g -Wall -std=c++23  # -g for debug symbols, -Wall for all warnings
 
 # Default target
 all: milk_server milk_client matrix_test

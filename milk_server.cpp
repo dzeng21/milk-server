@@ -274,15 +274,22 @@ Matrix& user_set_matrix(std::string& identifier, std::string& data) {
     std::unique_lock<std::mutex> milk_lk(milk_storage_mutex);
     std::stringstream oss;
 
+    bool C_exists = false;
+
+    if (matrix_storage.count(identifier)) {
+        C_exists = true;
+    }
+
     try {
-        matrix_storage[identifier] = Matrix();
         matrix_storage[identifier].construct(data);
         oss << "[initialize] matrix " << identifier << "\n";
     }
     catch (std::invalid_argument &e) {
-        matrix_storage.erase(identifier);
-        write_milk_storage_unsafe();
+        if (!C_exists) {
+            matrix_storage.erase(identifier);
+        }
         oss << "[matrix error] " << e.what() << "\n";
+        throw std::runtime_error(oss.str());
     }
     
     std::cout << oss.str();

@@ -12,6 +12,7 @@ public:
         matrix.reserve(64);
     }
 
+    void verify(const std::string &s);
     void construct(const std::string &s);
     void multiply(Matrix &A, Matrix &B, Matrix &C, ThreadPool &t);
     void deconstruct(std::string &output);
@@ -29,13 +30,22 @@ private:
 };
 
 void Matrix::construct(const std::string &s) {
+    Matrix* temp = nullptr;
+    
     if (this->rows || this->cols) {
-        this->matrix.clear();
+        temp = new Matrix();
+        *temp = *this;
+        *this = Matrix();
+    }
+    else {
+        temp = new Matrix();
     }
 
     std::invalid_argument arg_error = std::invalid_argument("matrix format [1 2 3; 4 5 6; 7 8 9]...");
 
     if (s.empty() || s.front() != '[' || s.back() != ']') {
+        *this = *temp;
+        delete temp;
         throw arg_error;
     }
 
@@ -57,6 +67,8 @@ void Matrix::construct(const std::string &s) {
                 row_data.push_back(std::stod(val));
             }
             catch (const std::invalid_argument &e) {
+                *this = *temp;
+                delete temp;
                 throw arg_error;
             }
         }
@@ -71,6 +83,8 @@ void Matrix::construct(const std::string &s) {
         }
         else {
             if (row_data.size() != this->cols) {
+                *this = *temp;
+                delete temp;
                 throw arg_error;
             }
         }
@@ -79,6 +93,8 @@ void Matrix::construct(const std::string &s) {
 
         this->rows++;
     }
+
+    delete temp;
 }
 
 void Matrix::multiply(Matrix &A, Matrix &B, Matrix &C, ThreadPool &t) {
