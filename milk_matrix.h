@@ -14,11 +14,13 @@ public:
 
     void construct(const std::string &s);
     void multiply(Matrix &A, Matrix &B, Matrix &C, ThreadPool &t);
+    void deconstruct(std::string &output);
     friend std::ostream& operator<<(std::ostream& os, const Matrix& m);
 private:
     std::vector<double> matrix;
     size_t rows;
     size_t cols;
+    std::string ctor;
 
     double get(int i, int j) const { return matrix[i * cols + j]; }
     void set(int i, int j, int value) { matrix[i * cols + j] = value; }
@@ -115,6 +117,19 @@ void Matrix::multiply_part(Matrix &A, Matrix &B, Matrix &C, size_t start, size_t
         for (size_t j = 0; j < p; ++j)
             for (size_t k = 0; k < n; ++k)
                 C.add(i, j, (A.get(i, k) * B.get(k, j)));
+}
+
+void Matrix::deconstruct(std::string &output) {
+    std::stringstream oss;
+    oss << "[";
+    for (size_t i = 0; i < this->rows; i++) {
+        for (size_t j = 0; j < this->cols; j++) {
+            oss << " " << this->get(i, j);
+        }
+        oss << ";";
+    }
+    oss << "]";
+    output = oss.str();
 }
 
 std::ostream& operator<<(std::ostream& os, const Matrix& m) {

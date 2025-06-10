@@ -21,6 +21,7 @@ const std::string milk_storage_file = "milk_storage.txt";
 const std::string SALT = "11111111";
 
 std::unordered_map<std::string, int> milk_storage;
+std::unordered_map<std::string, Matrix> matrix_storage;
 int global_milk;
 
 ThreadPool pool;
@@ -38,6 +39,19 @@ int tokenize(const char (&buffer)[], std::vector<std::string>& tokens) {
     
     while (iss >> token) {
         tokens.push_back(token);
+        if (token == "matrix") {
+            iss >> token;
+            tokens.push_back(token);
+            std::string data;
+            getline(iss, data);
+            if (data.size() <= 1) {
+                return tokens.size();
+            }
+            data = data.substr(1, data.size() - 1);
+            std::cout << "matrix data: " << data << "\n";
+            tokens.push_back(data);
+            break;
+        }
     }
 
     return tokens.size();
@@ -54,6 +68,12 @@ int write_milk_storage_unsafe() {
     for (auto& line : milk_storage) {
         oss << "user: " << line.first << " milk: " << line.second << "\n";
     }
+
+    for (auto& line : matrix_storage) {
+        std::string d;
+        line.second.deconstruct(d);
+        oss << "matrix: " << line.first << " data: " << d << "\n";
+    }
     
     file << oss.str();
     file.close();
@@ -66,6 +86,8 @@ int read_milk_storage_unsafe() {
     std::string line;
     std::string temp;
     std::string user;
+    std::string matrix;
+    std::string data;
     int milk;
     milk_storage.reserve(4096);
 
@@ -84,7 +106,11 @@ int read_milk_storage_unsafe() {
         } 
         else if (temp == "matrix:" )
         {
-
+            iss >> matrix >> temp;
+            getline(iss, data);
+            data = data.substr(1, data.size() - 1);
+            matrix_storage[matrix] = Matrix();
+            matrix_storage[matrix].construct(data);
         }
         else {
             continue;
@@ -165,6 +191,7 @@ int user_register(std::string& user) {
         milk_storage[hash] = 0;
         oss << "[register] user " << hash << "\n";
         registered = 1;
+        write_milk_storage_unsafe();
     }
     else {
         throw std::runtime_error("user already exists\n");
@@ -172,7 +199,6 @@ int user_register(std::string& user) {
     }
     
     std::cout << oss.str();
-    write_milk_storage_unsafe();
     
     return registered;
 }
@@ -244,6 +270,41 @@ int user_get_milk(std::string& user) {
     return 0;
 }
 
+Matrix& user_set_matrix(std::string& identifier, std::string& data) {
+    std::unique_lock<std::mutex> milk_lk(milk_storage_mutex);
+    std::stringstream oss;
+
+    try {
+        matrix_storage[identifier] = Matrix();
+        matrix_storage[identifier].construct(data);
+        oss << "[initialize] matrix " << identifier << "\n";
+    }
+    catch (std::invalid_argument &e) {
+        matrix_storage.erase(identifier);
+        write_milk_storage_unsafe();
+        oss << "[matrix error] " << e.what() << "\n";
+    }
+    
+    std::cout << oss.str();
+    write_milk_storage_unsafe();
+    
+    return matrix_storage[identifier];
+}
+
+Matrix& user_get_matrix(std::string& identifier) {
+    std::unique_lock<std::mutex> milk_lk(milk_storage_mutex);
+    std::stringstream oss;
+
+    if (matrix_storage.count(identifier)) {
+        oss << "[get] matrix " << identifier << "\n";
+        std::cout << oss.str();
+        return matrix_storage[identifier];
+    }
+    else {
+        throw std::runtime_error("matrix does not exist\n");
+    }
+}
+
 int read_buffer(const char (&buffer)[], std::string& response) {
     int status = 0;
     std::stringstream oss;
@@ -274,7 +335,7 @@ int read_buffer(const char (&buffer)[], std::string& response) {
                 oss << "user " << tokens[1] << " was registered\n";
             }
             catch (const std::exception& e) {
-                oss << "[client error] " << e.what();
+                oss << "[client error] " << e.what() << "\n";
             }
         }
     }
@@ -288,7 +349,7 @@ int read_buffer(const char (&buffer)[], std::string& response) {
                 oss << tokens[2] << " milk was added to user " << tokens[1] << "\n";
             }
             catch (const std::exception& e) {
-                oss << "[client error] " << e.what();
+                oss << "[client error] " << e.what() << "\n";
             }
         }
     }
@@ -302,7 +363,7 @@ int read_buffer(const char (&buffer)[], std::string& response) {
                 oss << "user " << tokens[1] << " milk was set to " << tokens[2] << "\n";
             }
             catch (const std::exception& e) {
-                oss << "[client error] " << e.what();
+                oss << "[client error] " << e.what() << "\n";
             }
         }
     }
@@ -316,8 +377,33 @@ int read_buffer(const char (&buffer)[], std::string& response) {
                 oss << "user " << tokens[1] << " has " << milk << " milk\n";
             }
             catch (std::runtime_error &e) {
-                oss << "[client error] " << e.what();
+                oss << "[client error] " << e.what() << "\n";
             }
+        } 
+    }
+    else if (tokens[0] == "matrix") {
+        if (tokens.size() == 2) {
+            try {
+                Matrix& m = user_get_matrix(tokens[1]);
+                oss << "Matrix " << tokens[1] << " = \n";
+                oss << m << "\n";
+            }
+            catch (std::runtime_error &e) {
+                oss << "[client error] " << e.what() << "\n";
+            }
+        }
+        else if (tokens.size() == 3) {
+            try {
+                Matrix& m = user_set_matrix(tokens[1], tokens[2]);
+                oss << "Matrix " << tokens[1] << " = \n";
+                oss << m << "\n";
+            }
+            catch (std::runtime_error &e) {
+                oss << "[client error] " << e.what() << "\n";
+            }
+        }
+        else {
+            oss << "usage: matrix [matrix] [[data]]\n";
         } 
     }
     else if (tokens[0] == "exit") {
@@ -450,6 +536,7 @@ int main() {
 
     close(serverSocket);
     milk_storage.clear();
+    matrix_storage.clear();
     
     return 0;
 }

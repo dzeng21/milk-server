@@ -92,7 +92,7 @@ int read_milk_storage_unsafe();
 int write_milk_storage_unsafe();
 
 // User milk operations
-bool hash_user(const std::string& user);
+bool hash_user(const std::string& user, std::string& hashed);
 bool user_exists(std::string& user);
 int user_get_global_milk();
 int user_register(std::string& user);

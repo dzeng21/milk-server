@@ -1,3 +1,4 @@
+#include <string>
 #include "milk_matrix.h"
 #include "milk_server.h"
 
@@ -11,6 +12,7 @@ int main() {
     Matrix a = Matrix();
     Matrix b = Matrix();
     Matrix c = Matrix();
+    Matrix d = Matrix();
 
     a.construct("[1 2; 3 4]");
     b.construct("[5 6; 7 8]");
@@ -18,6 +20,13 @@ int main() {
     c.multiply(a, b, c, pool);
 
     cout << c << "\n";
+
+    string s;
+    c.deconstruct(s);
+    cout << s << "\n";
+
+    d.construct(s);
+    cout << d << "\n";
 
     return 0;
 }
