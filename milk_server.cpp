@@ -14,6 +14,7 @@
 #include <openssl/sha.h>
 #include <iomanip>
 #include "milk_server.h"
+#include "milk_matrix.h"
 
 const int BUFFER_SIZE = 1024;
 const std::string milk_storage_file = "milk_storage.txt";

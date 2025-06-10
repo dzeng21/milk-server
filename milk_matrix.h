@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <iomanip>
 #include "milk_server.h"
 
 #pragma once
@@ -8,15 +9,16 @@
 class Matrix {
 public:
     Matrix() : rows(0), cols(0) {
-        matrix.resize(64);
+        matrix.reserve(64);
     }
 
     void construct(const std::string &s);
     void multiply(Matrix &A, Matrix &B, Matrix &C, ThreadPool &t);
+    friend std::ostream& operator<<(std::ostream& os, const Matrix& m);
 private:
     std::vector<double> matrix;
-    int rows;
-    int cols;
+    size_t rows;
+    size_t cols;
 
     double get(int i, int j) const { return matrix[i * cols + j]; }
     void set(int i, int j, int value) { matrix[i * cols + j] = value; }
@@ -78,6 +80,10 @@ void Matrix::construct(const std::string &s) {
 }
 
 void Matrix::multiply(Matrix &A, Matrix &B, Matrix &C, ThreadPool &t) {
+    if (&A == &C || &B == &C) {
+        throw std::invalid_argument("C cannot be A or B");
+    }
+
     C = Matrix();
     C.rows = A.rows;
     C.cols = B.cols;
@@ -91,11 +97,11 @@ void Matrix::multiply(Matrix &A, Matrix &B, Matrix &C, ThreadPool &t) {
         throw std::invalid_argument("B is uninitialized");
     }
 
-    int part_size = A.rows / 8;
+    size_t part_size = A.rows / t.thread_count();
 
-    for (int thread = 0; thread < 8; ++thread) {
-        int start = thread * part_size;
-        int end = (thread == 7) ? A.rows : start + part_size;
+    for (size_t thread = 0; thread < t.thread_count(); ++thread) {
+        size_t start = thread * part_size;
+        size_t end = (thread == 7) ? A.rows : start + part_size;
         t.enqueue([this, &A, &B, &C, start, end]() {
             multiply_part(A, B, C, start, end);
         });
@@ -103,10 +109,24 @@ void Matrix::multiply(Matrix &A, Matrix &B, Matrix &C, ThreadPool &t) {
 }
 
 void Matrix::multiply_part(Matrix &A, Matrix &B, Matrix &C, size_t start, size_t end) {
-    int n = B.rows;
-    int p = B.cols;
+    size_t n = B.rows;
+    size_t p = B.cols;
     for (size_t i = start; i < end; ++i)
         for (size_t j = 0; j < p; ++j)
             for (size_t k = 0; k < n; ++k)
                 C.add(i, j, (A.get(i, k) * B.get(k, j)));
+}
+
+std::ostream& operator<<(std::ostream& os, const Matrix& m) {
+    os << "\n";
+    for (size_t i = 0; i < m.rows; i++) {
+        os << "        ";
+        for (size_t j = 0; j < m.cols; j++) {
+            os << std::setw(8) << std::fixed;
+            os << m.get(i, j) << "        ";
+        }
+        os << "\n";
+    }
+    os << "\n";
+    return os;
 }

@@ -68,6 +68,8 @@ public:
         queue_cv_.notify_one();
     }
 
+    size_t thread_count() { return threads_.size(); }
+
 private:
     std::vector<std::thread> threads_;
     std::queue<std::function<void()>> tasks_;
