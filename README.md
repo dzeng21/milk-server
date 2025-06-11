@@ -4,4 +4,4 @@
 The milk server is capable of maintaining a milk storage file that contains milk logistics and user information as well performing matrix math and storing matrices.
 
 #### milk_client
-The milk client is capable of interacting with the milk server storage and querying matrix math on matrices stored in milk storage.
+The milk client is capable of interacting with the milk server storage, initializing matrices the server, and querying matrix math on matrices stored in milk storage.
