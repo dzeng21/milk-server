@@ -1,6 +1,6 @@
 ### This is a high-performance multi-threaded server for milk logistics and matrix math
 
-#### milk_server:
+#### milk_server
 The milk server is capable of maintaining a milk storage file that contains milk logistics and user information as well performing fast multi-threaded matrix math and storing matrices.
 
 #### milk_client
