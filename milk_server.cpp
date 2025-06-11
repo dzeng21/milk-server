@@ -468,17 +468,20 @@ int read_buffer(const char (&buffer)[], std::string& response) {
         } 
     }
     else if (tokens[0] == "multiply") {
-        if (tokens.size() != 4) {
+        if (tokens.size() == 4) {
+            try {
+                Matrix& m = user_multiply_matrix(tokens[1], tokens[2], tokens[3]);
+                oss << "Matrix " << tokens[3] << " = \n";
+                oss << m << "\n";
+            }
+            catch (std::runtime_error &e) {
+                oss << "[client error] " << e.what() << "\n";
+            }
+        }
+        else {
             oss << "usage: multiply [matrix] [matrix] [matrix]\n";
         }
-        try {
-            Matrix& m = user_multiply_matrix(tokens[1], tokens[2], tokens[3]);
-            oss << "Matrix " << tokens[3] << " = \n";
-            oss << m << "\n";
-        }
-        catch (std::runtime_error &e) {
-            oss << "[client error] " << e.what() << "\n";
-        }
+        
     }
     else if (tokens[0] == "exit") {
         oss << "goodbye\n";
