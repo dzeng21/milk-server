@@ -40,7 +40,9 @@ int tokenize(const char (&buffer)[], std::vector<std::string>& tokens) {
     while (iss >> token) {
         tokens.push_back(token);
         if (token == "matrix") {
-            iss >> token;
+            if (!(iss >> token)) {
+                return tokens.size();
+            }
             tokens.push_back(token);
             std::string data;
             getline(iss, data);
